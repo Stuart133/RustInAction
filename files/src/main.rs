@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::{Display};
 use rand::prelude::*;
 
 fn one_in(denominator: u32) -> bool {
@@ -8,6 +10,15 @@ fn one_in(denominator: u32) -> bool {
 enum FileState {
     Open,
     Closed,
+}
+
+impl Display for FileState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FileState::Open => write!(f, "OPEN"),
+            FileState::Closed => write!(f, "CLOSED"),
+        }
+    }
 }
 
 trait Read {
@@ -51,6 +62,12 @@ impl Read for File {
     }
 }
 
+impl Display for File {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<{} {}>", self.name, self.state)
+    }
+}
+
 fn open(mut f: File) -> Result<File, String> {
     if one_in(10_000) {
         let err_msg = String::from("Permission denied");
@@ -85,7 +102,7 @@ fn main() {
 
     let text = String::from_utf8_lossy(&buffer);
 
-    println!("{:?}", f2);
+    println!("{}", f2);
     println!("{} is {} bytes long", &f2.name, f2_length);
     println!("{}", text);
 }
