@@ -2,6 +2,8 @@ struct CPU {
     program_counter: usize,
     registers: [u8; 16],
     memory: [u8; 0x1000],
+    stack: [u16; 16],
+    stack_pointer: usize,
 }
 
 impl CPU {
@@ -31,6 +33,26 @@ impl CPU {
         }
     }
 
+    fn call(&mut self, addr: u16) {
+        if self.stack_pointer > self.stack.len() {
+            panic!("Stack overflow!");
+        }
+
+        self.stack[self.stack_pointer] = self.program_counter as u16;
+        self.stack_pointer += 1;
+        self.program_counter = addr as usize;
+    }
+
+    fn ret(&mut self) {
+        if self.stack_pointer == 0 {
+            panic!("Stack underflow!");
+        }
+
+        self.stack_pointer -= 1;
+        let call_addr = self.stack[self.stack_pointer];
+        self.program_counter = call_addr as usize;
+    }
+
     fn add_xy(&mut self, x: u8, y: u8) {
         let arg1 = self.registers[x as usize];
         let arg2 = self.registers[y as usize];
@@ -51,6 +73,8 @@ fn main() {
         registers: [0; 16],
         memory: [0; 0x1000],
         program_counter: 0,
+        stack: [0; 16],
+        stack_pointer: 0,
     };
 
     cpu.registers[0] = 5;
