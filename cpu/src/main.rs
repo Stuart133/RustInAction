@@ -25,8 +25,12 @@ impl CPU {
             let y = ((opcode & 0x00F0) >> 4) as u8;
             let d = (opcode & 0x000F) as u8;
 
+            let nnn = opcode & 0x0FFF;
+
             match (c, x, y, d) {
                 (0, 0, 0, 0) => return,
+                (0, 0, 0xE, 0xE) => self.ret(),
+                (0x2, _, _, _) => self.call(nnn),
                 (0x8, _, _, 0x4) => self.add_xy(x, y),
                 _ => todo!("opcode {:04x}", opcode),
             }
@@ -79,15 +83,17 @@ fn main() {
 
     cpu.registers[0] = 5;
     cpu.registers[1] = 10;
-    cpu.registers[2] = 10;
-    cpu.registers[3] = 10;
 
     let mem = &mut cpu.memory;
-    mem[0] = 0x80; mem[1] = 0x14;
-    mem[2] = 0x80; mem[3] = 0x24;
-    mem[4] = 0x80; mem[5] = 0x34;
+    mem[0] = 0x21; mem[1] = 0x00;
+    mem[2] = 0x21; mem[3] = 0x00;
+    mem[4] = 0x00; mem[5] = 0x00;
+
+    mem[0x100] = 0x80; mem[0x101] = 0x14;
+    mem[0x102] = 0x80; mem[0x103] = 0x14;
+    mem[0x104] = 0x00; mem[0x105] = 0xEE;
 
     cpu.run();
 
-    println!("5 + 10 + 10 + 10 = {}", cpu.registers[0]);
+    println!("5 + (10 * 2) + (10 * 2) = {}", cpu.registers[0]);
 }
