@@ -106,7 +106,7 @@ impl Particle {
         let x = rng.gen_range(0.0..=world.width);
         let y = world.height;
         let x_velocity = 0.0;
-        let y_velocity = rng.gen_range(-2.0..0);
+        let y_velocity = rng.gen_range(-2.0..0.0);
         let x_acceleration = 0.0;
         let y_acceleration = rng.gen_range(0.0..0.15);
 
