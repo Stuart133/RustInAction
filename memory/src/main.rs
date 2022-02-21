@@ -1,36 +1,55 @@
-use std::borrow::Cow;
-use std::ffi::CStr;
-use std::os::raw::c_char;
-
-static B: [u8; 10] = [99, 97, 114, 114, 121, 116, 111, 119, 101, 108];
-static C: [u8; 11] = [116, 104, 97, 110, 107, 115, 102, 105, 115, 104, 0];
+use kernel32;
+use winapi::{
+    DWORD,
+    HANDLE,
+    LPVOID,
+    PVOID,
+    SIZE_T,
+    LPSYSTEM_INFO,
+    SYSTEM_INFO,
+    MEMORY_BASIC_INFORMATION as MEMINFO,
+};
 
 fn main() {
-    fun_with_pointers();
-    
-    let a = 42;
+    let this_pid: DWORD;
+    let this_proc: HANDLE;
+    let min_addr: LPVOID;
+    let max_addr: LPVOID;
+    let mut base_addr: PVOID;
+    let mut proc_info: SYSTEM_INFO;
+    let mut mem_info: MEMINFO;
 
-    let b: String;
-    let c: Cow<str>;
-
-    unsafe {
-        let b_ptr = &B as *const u8 as *mut u8;
-
-        b = String::from_raw_parts(b_ptr, 10, 10);
-
-        let c_ptr = &C as *const u8 as *const c_char;
-
-        c = CStr::from_ptr(c_ptr).to_string_lossy();
-    }
-
-    println!("a: {}, b: {}, c: {}", a, b, c);
-}
-
-fn fun_with_pointers() {
-    let ptr = 42 as *const Vec<String>;
+    const MEMINFO_SIZE: usize = std::mem::size_of::<MEMINFO>();
 
     unsafe {
-        let new_addr = ptr.offset(4);
-        println!("{:p} -> {:p}", ptr, new_addr);
+        base_addr = std::mem::zeroed();
+        proc_info = std::mem::zeroed();
+        mem_info = std::mem::zeroed();
+    };
+
+    unsafe {
+        this_pid = kernel32::GetCurrentProcessId();
+        this_proc = kernel32::GetCurrentProcess();
+        kernel32::GetSystemInfo(&mut proc_info as LPSYSTEM_INFO);
+    };
+
+    min_addr = proc_info.lpMinimumApplicationAddress;
+    max_addr = proc_info.lpMaximumApplicationAddress;
+
+    println!("{:?} @ {:p}", this_pid, this_proc);
+    println!("{:?}", proc_info);
+    println!("min: {:p}, max: {:p}", min_addr, max_addr);
+
+    loop {
+        let rc: SIZE_T = unsafe {
+            kernel32::VirtualQueryEx(this_proc, base_addr, &mut mem_info, MEMINFO_SIZE as SIZE_T)
+        };
+
+        if rc == 0 {
+            break
+        }
+
+        println!("{:#?}", mem_info);
+        base_addr = ((base_addr as u64) + mem_info.RegionSize) as PVOID;
     }
 }
